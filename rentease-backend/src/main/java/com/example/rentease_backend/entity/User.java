@@ -20,12 +20,13 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    private String password;   // abhi plain, baad me hash kar sakte hain
+    private String password; // BCrypt hashed
 
-    private String role;       // "OWNER" ya "TENANT"
+    private String role; // "OWNER" | "TENANT" | "ADMIN"
 
-    public User() {
-    }
+    private String phone;
+
+    public User() {}
 
     public User(String name, String email, String password, String role) {
         this.name = name;
@@ -34,39 +35,20 @@ public class User {
         this.role = role;
     }
 
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }

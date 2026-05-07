@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 public class UserController {
 
     private final UserRepository userRepository;
@@ -17,23 +16,24 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
+    // GET all users (admin use)
     @GetMapping
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
-    @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userRepository.save(user);
-    }
-
+    // GET user by ID
     @GetMapping("/{id}")
     public User getUserById(@PathVariable Long id) {
         return userRepository.findById(id).orElse(null);
     }
 
+    // GET users by role — e.g. /api/users/role/OWNER
     @GetMapping("/role/{role}")
     public List<User> getUsersByRole(@PathVariable String role) {
-        return userRepository.findByRole(role);
+        return userRepository.findByRole(role.toUpperCase());
     }
+
+    // NOTE: POST (create user) is handled by /api/auth/register — NOT here.
+    // Keeping POST here would bypass BCrypt hashing and JWT flow.
 }

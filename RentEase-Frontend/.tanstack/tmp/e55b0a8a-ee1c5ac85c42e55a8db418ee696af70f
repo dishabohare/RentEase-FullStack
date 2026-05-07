@@ -1,0 +1,243 @@
+import { createFileRoute } from "@tanstack/react-router";
+import React, { useEffect, useMemo, useState } from "react";
+import { PropertyCard } from "@/components/PropertyCard";
+import api from "@/lib/api";
+import { MainLayout } from "@/components/layouts/MainLayout";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Search, MapPin, FilterX, Home, Loader2, IndianRupee, BedDouble, SlidersHorizontal, LayoutGrid, Map as MapIcon, X, Building2, Sparkles, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
+export const Route = createFileRoute("/properties/")({
+  component: PropertiesPage,
+});
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const AMENITIES_LIST = [
+  "WiFi", "Parking", "Power Backup", "Lift", "Security", "Gym", "Swimming Pool", "Balcony"
+];
+
+function PropertiesPage() {
+  const [properties, setProperties] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Filters
+  const [search, setSearch] = useState("");
+  const [location, setLocation] = useState("");
+  const [maxPrice, setMaxPrice] = useState([100000]);
+  const [type, setType] = useState<string>("ALL");
+  const [beds, setBeds] = useState<string>("ALL");
+  const [furnishing, setFurnishing] = useState<string>("ALL");
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    api
+      .get("/properties")
+      .then((res) => {
+        setProperties(res.data);
+      })
+      .catch((err) => {
+        console.error("API ERROR:", err);
+        setError("Failed to load properties. Please try again later.");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(() => {
+    return properties.filter((p) => {
+      if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+      if (location && !p.location.toLowerCase().includes(location.toLowerCase())) return false;
+      if (p.price > maxPrice[0]) return false;
+      if (type !== "ALL" && p.type !== type) return false;
+      if (beds !== "ALL" && p.beds < parseInt(beds)) return false;
+      if (furnishing !== "ALL" && p.furnishing !== furnishing) return false;
+      
+      if (selectedAmenities.length > 0) {
+        const pAmenities = p.amenities ? p.amenities.split(",").map((a: string) => a.trim()) : [];
+        if (!selectedAmenities.every(a => pAmenities.includes(a))) return false;
+      }
+      
+      return true;
+    });
+  }, [properties, search, location, maxPrice, type, beds, furnishing, selectedAmenities]);
+
+  const resetFilters = () => {
+    setSearch("");
+    setLocation("");
+    setMaxPrice([100000]);
+    setType("ALL");
+    setBeds("ALL");
+    setFurnishing("ALL");
+    setSelectedAmenities([]);
+  };
+
+  const toggleAmenity = (amenity: string) => {
+    setSelectedAmenities(prev => 
+      prev.includes(amenity) ? prev.filter(a => a !== amenity) : [...prev, amenity]
+    );
+  };
+
+  return (
+    <MainLayout>
+      <div className="min-h-screen bg-background">
+        {/* Modern Filter Bar */}
+        <section className="sticky top-[64px] z-30 bg-background/80 backdrop-blur-xl border-b border-border/40 py-4 shadow-sm">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-wrap items-center gap-4">
+               <div className="flex-1 min-w-[200px] relative group">
+                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <Input
+                    placeholder="Search Location (e.g. Indore)"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="pl-9 h-11 rounded-xl border-border/40 bg-card/50"
+                  />
+               </div>
+
+               <Select value={type} onValueChange={setType}>
+                <SelectTrigger className="w-[140px] h-11 rounded-xl border-border/40 bg-card/50">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Types</SelectItem>
+                  <SelectItem value="Apartment">Apartment</SelectItem>
+                  <SelectItem value="Flat">Flat</SelectItem>
+                  <SelectItem value="House">House</SelectItem>
+                  <SelectItem value="Villa">Villa</SelectItem>
+                  <SelectItem value="Studio">Studio</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={beds} onValueChange={setBeds}>
+                <SelectTrigger className="w-[120px] h-11 rounded-xl border-border/40 bg-card/50">
+                  <SelectValue placeholder="BHK" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">Any BHK</SelectItem>
+                  <SelectItem value="1">1+ BHK</SelectItem>
+                  <SelectItem value="2">2+ BHK</SelectItem>
+                  <SelectItem value="3">3+ BHK</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={furnishing} onValueChange={setFurnishing}>
+                <SelectTrigger className="w-[150px] h-11 rounded-xl border-border/40 bg-card/50">
+                  <SelectValue placeholder="Furnishing" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Furnishing</SelectItem>
+                  <SelectItem value="Fully Furnished">Fully Furnished</SelectItem>
+                  <SelectItem value="Semi Furnished">Semi Furnished</SelectItem>
+                  <SelectItem value="Unfurnished">Unfurnished</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="hidden lg:flex flex-col gap-2 w-[160px] px-2">
+                <div className="flex justify-between text-[10px] font-bold uppercase text-muted-foreground">
+                  <span>Budget</span>
+                  <span className="text-primary">₹{(maxPrice[0]/1000).toFixed(0)}k</span>
+                </div>
+                <Slider value={maxPrice} onValueChange={setMaxPrice} max={100000} step={1000} className="py-1" />
+              </div>
+
+              {(location || type !== "ALL" || beds !== "ALL" || furnishing !== "ALL" || selectedAmenities.length > 0) && (
+                 <Button variant="ghost" size="sm" onClick={resetFilters} className="text-xs font-bold text-destructive hover:bg-destructive/10 rounded-full h-11">
+                    <FilterX className="mr-2 h-4 w-4" /> Reset
+                 </Button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="mb-10">
+             <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-xs mb-3">
+                <Sparkles className="h-4 w-4" /> Verified Rental Listings
+             </div>
+             <h1 className="text-4xl font-black tracking-tight">
+                {filtered.length} homes available in Indore
+             </h1>
+          </div>
+
+          <div className="flex flex-col gap-10 lg:flex-row">
+            {/* Sidebar Filters */}
+            <div className="hidden lg:block w-[280px] shrink-0 space-y-8">
+               <div className="rounded-[2rem] border bg-card p-8 shadow-soft">
+                  <h3 className="text-lg font-black mb-6">Must-have Amenities</h3>
+                  <div className="space-y-4">
+                     {AMENITIES_LIST.map(amenity => (
+                        <div key={amenity} className="flex items-center space-x-3 group cursor-pointer" onClick={() => toggleAmenity(amenity)}>
+                           <Checkbox id={`filter-${amenity}`} checked={selectedAmenities.includes(amenity)} onCheckedChange={() => toggleAmenity(amenity)} />
+                           <Label htmlFor={`filter-${amenity}`} className="text-sm font-bold text-muted-foreground group-hover:text-foreground cursor-pointer transition-colors">{amenity}</Label>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+
+               <div className="rounded-[2rem] bg-gradient-primary p-8 text-white shadow-elegant">
+                  <h3 className="text-xl font-black mb-2">Owner?</h3>
+                  <p className="text-sm opacity-90 mb-6">List your property and get verified tenants with zero brokerage.</p>
+                  <Button variant="secondary" asChild className="w-full rounded-full font-bold">
+                    <Link to="/add-property">Post for FREE</Link>
+                  </Button>
+               </div>
+            </div>
+
+            {/* Results Area */}
+            <div className="flex-1 space-y-8">
+              {loading ? (
+                <div className="space-y-8">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-64 w-full rounded-[2.5rem]" />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="text-center py-20 bg-destructive/5 rounded-[3rem] border-2 border-destructive/10">
+                  <h3 className="text-2xl font-black text-destructive">{error}</h3>
+                  <Button onClick={() => window.location.reload()} className="mt-6">Retry</Button>
+                </div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-32 rounded-[3rem] border-2 border-dashed border-border/40 bg-card/30">
+                  <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary mb-6">
+                    <Building2 className="h-10 w-10" />
+                  </div>
+                  <h3 className="text-3xl font-black">No matching properties</h3>
+                  <p className="mt-4 text-muted-foreground max-w-md mx-auto">Try adjusting your filters or amenities to see more results in Indore.</p>
+                  <Button onClick={resetFilters} variant="outline" className="mt-8 rounded-full px-8">Clear all filters</Button>
+                </div>
+              ) : (
+                <motion.div 
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-8"
+                >
+                  {filtered.map((p) => (
+                    <PropertyCard key={p.id} property={{ ...p, id: String(p.id) }} />
+                  ))}
+                </motion.div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}
