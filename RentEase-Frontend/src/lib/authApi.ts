@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   role: string;   // "OWNER" | "TENANT" | "ADMIN"
   phone?: string;
+  avatar?: string;
 }
 
 export interface AuthResponse {

@@ -17,4 +17,7 @@ public interface PropertyRepository extends JpaRepository<Property, Long> {
 
     // type + city
     List<Property> findByCityAndPropertyType(String city, String propertyType);
+
+    // owner id
+    List<Property> findByOwnerId(Long ownerId);
 }

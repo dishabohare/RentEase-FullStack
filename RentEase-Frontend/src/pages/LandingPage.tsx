@@ -1,16 +1,20 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
-import { properties } from "@/data/mockData";
+import { getAllProperties } from "../lib/PropertyApi";
+import { getFavoriteIds, addFavorite, removeFavorite } from "../lib/FavoritesApi";
+import { useAuth } from "../context/AuthContext";
 import {
   Search, Shield, Users, Zap, CheckCircle2, ArrowRight,
   Home, DollarSign, Eye, MessageCircle, Star, Sparkles,
   CreditCard, Video, MapPin, FileText, Smartphone, Bot,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
@@ -49,6 +53,88 @@ const futureFeatures = [
 ];
 
 export default function LandingPage() {
+  const { isAuthenticated } = useAuth();
+  const [properties, setProperties] = useState<any[]>([]);
+  const [savedIds, setSavedIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    const fetchFeaturedProperties = async () => {
+      try {
+        const allProps = await getAllProperties();
+        const normalized = (allProps || []).map((p: any, idx: number) => {
+          let furnishVal = p.furnished;
+          if (typeof p.furnished === "boolean") {
+            furnishVal = p.furnished ? "Furnished" : "Unfurnished";
+          }
+
+          let propImage = "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80";
+          let propImages = [propImage];
+          if (p.images && p.images.length > 0) {
+            propImages = p.images.map((img: any) => typeof img === 'object' ? img.imageUrl : img);
+            propImage = propImages[0];
+          } else if (p.image) {
+            propImage = p.image;
+            propImages = [p.image];
+          }
+
+          return {
+            ...p,
+            id: p.id ?? String(idx),
+            location: p.location || [p.address, p.city].filter(Boolean).join(", ") || "No location listed",
+            type: p.propertyType || p.type || "Apartment",
+            bedrooms: p.bedrooms ?? Number(p.bhk ?? 0),
+            bathrooms: p.bathrooms ?? Math.max(1, Number(p.bhk ?? 0) - 1),
+            area: p.area ?? Number(p.areaSqFt ?? 0),
+            furnished: furnishVal || "Unfurnished",
+            rent: Number(p.rent ?? 0),
+            image: propImage,
+            images: propImages
+          };
+        });
+        setProperties(normalized);
+      } catch (error) {
+        console.error("Error fetching properties for landing page:", error);
+      }
+    };
+
+    const fetchFavorites = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const ids = await getFavoriteIds();
+        setSavedIds(ids || []);
+      } catch (error) {
+        console.error("Error fetching favorite IDs:", error);
+      }
+    };
+
+    fetchFeaturedProperties();
+    fetchFavorites();
+  }, [isAuthenticated]);
+
+  const handleToggleSave = async (propertyId: number | string) => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to save properties.");
+      return;
+    }
+    const id = Number(propertyId);
+    const isAlreadySaved = savedIds.includes(id);
+
+    try {
+      if (isAlreadySaved) {
+        await removeFavorite(id);
+        setSavedIds((prev) => prev.filter((item) => item !== id));
+        toast.success("Property removed from wishlist");
+      } else {
+        await addFavorite(id);
+        setSavedIds((prev) => [...prev, id]);
+        toast.success("Property saved to wishlist");
+      }
+    } catch (error) {
+      console.error("Error updating saved status:", error);
+      toast.error("Failed to update wishlist");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -159,13 +245,21 @@ export default function LandingPage() {
               <Link to="/explore">View All <ArrowRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </motion.div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {properties.slice(0, 4).map((p, i) => (
-              <motion.div key={p.id} {...fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }}>
-                <PropertyCard property={p} />
-              </motion.div>
-            ))}
-          </div>
+          {properties.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-10">No featured properties available.</p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {properties.slice(0, 4).map((p, i) => (
+                <motion.div key={p.id} {...fadeUp} transition={{ duration: 0.5, delay: i * 0.1 }}>
+                  <PropertyCard
+                    property={p}
+                    isSaved={savedIds.includes(Number(p.id))}
+                    onToggleSave={handleToggleSave}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

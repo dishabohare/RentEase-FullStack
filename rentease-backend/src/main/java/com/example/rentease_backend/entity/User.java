@@ -26,6 +26,9 @@ public class User {
 
     private String phone;
 
+    @Column(columnDefinition = "LONGTEXT")
+    private String avatar;
+
     public User() {}
 
     public User(String name, String email, String password, String role) {
@@ -51,4 +54,7 @@ public class User {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
 }

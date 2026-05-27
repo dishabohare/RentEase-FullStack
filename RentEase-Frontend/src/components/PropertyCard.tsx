@@ -5,9 +5,13 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { Property } from "@/data/mockData";
 
-export default function PropertyCard({ property }: { property: Property }) {
-  const [saved, setSaved] = useState(false);
+interface PropertyCardProps {
+  property: any;
+  isSaved?: boolean;
+  onToggleSave?: (propertyId: number | string) => void;
+}
 
+export default function PropertyCard({ property, isSaved = false, onToggleSave }: PropertyCardProps) {
   return (
     <div className="group overflow-hidden rounded-xl border border-border bg-card shadow-card transition-all duration-300 hover:shadow-hover hover:-translate-y-1">
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -27,10 +31,15 @@ export default function PropertyCard({ property }: { property: Property }) {
           {property.furnished}
         </Badge>
         <button
-          onClick={(e) => { e.preventDefault(); setSaved(!saved); }}
+          onClick={(e) => {
+            e.preventDefault();
+            if (onToggleSave) {
+              onToggleSave(property.id);
+            }
+          }}
           className="absolute right-3 bottom-3 flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur-sm transition-colors hover:bg-card"
         >
-          <Heart className={`h-4 w-4 transition-colors ${saved ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+          <Heart className={`h-4 w-4 transition-colors ${isSaved ? "fill-accent text-accent" : "text-muted-foreground"}`} />
         </button>
       </div>
 

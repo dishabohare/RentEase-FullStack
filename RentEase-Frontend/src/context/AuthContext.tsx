@@ -2,7 +2,6 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   ReactNode,
 } from "react";
 import { loginApi, registerApi, AuthUser } from "../lib/authApi";
@@ -21,30 +20,26 @@ interface AuthContextType {
     phone?: string
   ) => Promise<AuthUser>;
   logout: () => void;
+  updateUser: (updatedUser: AuthUser) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser]       = useState<AuthUser | null>(null);
-  const [token, setToken]     = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Restore session from localStorage on first load
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser  = localStorage.getItem("user");
-    if (storedToken && storedUser) {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
       try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        return JSON.parse(storedUser);
       } catch {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
       }
     }
-    setIsLoading(false);
-  }, []);
+    return null;
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   const login = async (email: string, password: string): Promise<AuthUser> => {
     const data = await loginApi(email, password);
@@ -77,6 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateUser = (updatedUser: AuthUser) => {
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        updateUser,
       }}
     >
       {children}

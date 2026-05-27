@@ -1,6 +1,5 @@
-import { useState } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { useState, useEffect } from "react";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +14,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, Upload, Eye, Send } from "lucide-react";
 import { createProperty } from "../lib/PropertyApi";
+import { toast } from "sonner";
 
 const amenitiesList = [
   "WiFi",
@@ -35,6 +35,10 @@ export default function AddPropertyPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [amenities, setAmenities] = useState<string[]>([]);
+
+  useEffect(() => {
+    document.title = "List Property | RentEase";
+  }, []);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -91,6 +95,7 @@ export default function AddPropertyPage() {
 
       await createProperty(payload);
       setSubmitted(true);
+      toast.success("Property listed successfully!");
 
       setFormData({
         title: "",
@@ -111,7 +116,7 @@ export default function AddPropertyPage() {
       setAmenities([]);
     } catch (error) {
       console.error("Error saving property:", error);
-      alert("Property save nahi hui. Console me error check karo.");
+      toast.error("Failed to save property. Please check backend connection.");
     } finally {
       setLoading(false);
     }
@@ -119,9 +124,8 @@ export default function AddPropertyPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container flex flex-col items-center py-20 text-center">
+      <DashboardLayout>
+        <div className="flex flex-col items-center py-20 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
             <CheckCircle2 className="h-10 w-10 text-success" />
           </div>
@@ -129,7 +133,7 @@ export default function AddPropertyPage() {
             Property Submitted!
           </h1>
           <p className="mt-3 max-w-md text-muted-foreground">
-            Your property has been saved successfully.
+            Your property has been saved successfully and is pending admin verification.
           </p>
           <Button
             className="mt-6 bg-gradient-hero"
@@ -138,15 +142,13 @@ export default function AddPropertyPage() {
             Add Another Property
           </Button>
         </div>
-        <Footer />
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="container max-w-3xl py-8">
+    <DashboardLayout>
+      <div className="max-w-3xl mx-auto">
         <h1 className="mb-2 text-2xl font-bold text-foreground">
           List Your Property
         </h1>
@@ -180,6 +182,7 @@ export default function AddPropertyPage() {
                   onValueChange={(value) =>
                     setFormData((prev) => ({ ...prev, propertyType: value }))
                   }
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select type" />
@@ -200,6 +203,7 @@ export default function AddPropertyPage() {
                   onValueChange={(value) =>
                     setFormData((prev) => ({ ...prev, bhk: value }))
                   }
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select BHK" />
@@ -310,6 +314,7 @@ export default function AddPropertyPage() {
                   onValueChange={(value) =>
                     setFormData((prev) => ({ ...prev, furnished: value }))
                   }
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
@@ -376,10 +381,10 @@ export default function AddPropertyPage() {
                 <div className="text-center">
                   <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Image upload backend me abhi connected nahi hai
+                    Image upload backend will be integrated soon
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Property abhi without image save hogi
+                    Property will currently use a default placeholder image
                   </p>
                 </div>
               </div>
@@ -439,7 +444,6 @@ export default function AddPropertyPage() {
           </div>
         </form>
       </div>
-      <Footer />
-    </div>
+    </DashboardLayout>
   );
 }

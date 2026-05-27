@@ -71,6 +71,7 @@ public class AuthController {
         userMap.put("email", user.getEmail());
         userMap.put("role",  user.getRole());
         userMap.put("phone", user.getPhone());
+        userMap.put("avatar", user.getAvatar());
 
         Map<String, Object> response = new HashMap<>();
         response.put("token", token);

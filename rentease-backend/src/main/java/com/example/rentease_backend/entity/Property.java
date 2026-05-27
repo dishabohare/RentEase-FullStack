@@ -6,6 +6,11 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 public class Property {
@@ -24,6 +29,7 @@ public class Property {
     private Integer bhk;           // 1,2,3...
     private Double areaSqFt;       // size
     private Boolean furnished;     // true/false
+    private Boolean verified = false;
 
     private Double rent;
 
@@ -31,6 +37,9 @@ public class Property {
     @ManyToOne
     @JoinColumn(name = "owner_id")
     private User owner;
+
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    private List<PropertyImage> images = new ArrayList<>();
 
     public Property() {
     }
@@ -139,5 +148,21 @@ public class Property {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public List<PropertyImage> getImages() {
+        return images;
+    }
+
+    public void setImages(List<PropertyImage> images) {
+        this.images = images;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
     }
 }

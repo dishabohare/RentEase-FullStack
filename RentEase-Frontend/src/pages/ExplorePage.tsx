@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAllProperties } from "../lib/PropertyApi";
+import { getFavoriteIds, addFavorite, removeFavorite } from "../lib/FavoritesApi";
+import { useAuth } from "../context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PropertyCard from "@/components/PropertyCard";
@@ -14,13 +16,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, SlidersHorizontal, X } from "lucide-react";
+import { toast } from "sonner";
 
 const propertyTypes = ["All", "FLAT", "HOUSE", "PG", "VILLA"];
 const bhkOptions = ["Any", "1", "2", "3", "4+"];
 const furnishOptions = ["All", "yes", "no"];
 
 export default function ExplorePage() {
+  const { isAuthenticated } = useAuth();
   const [properties, setProperties] = useState<any[]>([]);
+  const [savedIds, setSavedIds] = useState<number[]>([]);
   const [search, setSearch] = useState("");
   const [type, setType] = useState("All");
   const [bhk, setBhk] = useState("Any");
@@ -29,34 +34,102 @@ export default function ExplorePage() {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
+    document.title = "Explore Rentals | RentEase";
+  }, []);
+
+  useEffect(() => {
     const fetchProperties = async () => {
       try {
         const data = await getAllProperties();
         console.log("Explore Properties:", data);
-        setProperties(data);
+        setProperties(data || []);
       } catch (error) {
         console.error("Error fetching properties:", error);
+        toast.error("Failed to load rental listings from server.");
+      }
+    };
+
+    const fetchFavorites = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const ids = await getFavoriteIds();
+        setSavedIds(ids || []);
+      } catch (error) {
+        console.error("Error fetching saved property IDs:", error);
       }
     };
 
     fetchProperties();
-  }, []);
+    fetchFavorites();
+  }, [isAuthenticated]);
+
+  const handleToggleSave = async (propertyId: number | string) => {
+    if (!isAuthenticated) {
+      toast.error("Please log in to save properties.");
+      return;
+    }
+    const id = Number(propertyId);
+    const isAlreadySaved = savedIds.includes(id);
+
+    try {
+      if (isAlreadySaved) {
+        await removeFavorite(id);
+        setSavedIds((prev) => prev.filter((item) => item !== id));
+        toast.success("Property removed from wishlist");
+      } else {
+        await addFavorite(id);
+        setSavedIds((prev) => [...prev, id]);
+        toast.success("Property saved to wishlist");
+      }
+    } catch (error) {
+      console.error("Error updating saved status:", error);
+      toast.error("Failed to update wishlist");
+    }
+  };
 
   const normalizedProperties = useMemo(() => {
-    return properties.map((p, index) => ({
-      id: p.id ?? index,
-      title: p.title ?? "Untitled Property",
-      location: [p.address, p.city].filter(Boolean).join(", "),
-      type: p.propertyType ?? "",
-      bhk: Number(p.bhk ?? 0),
-      furnished: p.furnished === true ? "yes" : "no",
-      rent: Number(p.rent ?? 0),
-      verified: false,
-      image:
-        p.image ||
-        "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80",
-      ...p,
-    }));
+    return properties.map((p, index) => {
+      const bedrooms = p.bedrooms ?? Number(p.bhk ?? 0);
+      const bathrooms = p.bathrooms ?? Math.max(1, Number(p.bhk ?? 0) - 1);
+      const area = p.area ?? Number(p.areaSqFt ?? 0);
+      
+      let furnishVal = p.furnished;
+      if (typeof p.furnished === "boolean") {
+        furnishVal = p.furnished ? "Furnished" : "Unfurnished";
+      } else if (p.furnished === "yes") {
+        furnishVal = "Furnished";
+      } else if (p.furnished === "no") {
+        furnishVal = "Unfurnished";
+      }
+
+      let propImage = "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80";
+      let propImages = [propImage];
+      
+      if (p.images && p.images.length > 0) {
+        propImages = p.images.map((img: any) => typeof img === 'object' ? img.imageUrl : img);
+        propImage = propImages[0];
+      } else if (p.image) {
+        propImage = p.image;
+        propImages = [p.image];
+      }
+
+      return {
+        ...p,
+        id: p.id ?? String(index),
+        title: p.title ?? "Untitled Property",
+        location: p.location || [p.address, p.city].filter(Boolean).join(", ") || "No location listed",
+        type: p.type || p.propertyType || "Apartment",
+        bhk: Number(p.bhk ?? 0),
+        bedrooms,
+        bathrooms,
+        area,
+        furnished: furnishVal || "Unfurnished",
+        rent: Number(p.rent ?? 0),
+        verified: p.verified ?? false,
+        image: propImage,
+        images: propImages
+      };
+    });
   }, [properties]);
 
   const filtered = useMemo(() => {
@@ -71,7 +144,7 @@ export default function ExplorePage() {
     }
 
     if (type !== "All") {
-      list = list.filter((p) => p.type === type);
+      list = list.filter((p) => String(p.type).toUpperCase() === type.toUpperCase());
     }
 
     if (bhk !== "Any") {
@@ -81,7 +154,8 @@ export default function ExplorePage() {
     }
 
     if (furnish !== "All") {
-      list = list.filter((p) => p.furnished === furnish);
+      const matchVal = furnish === "yes" ? "Furnished" : "Unfurnished";
+      list = list.filter((p) => p.furnished === matchVal);
     }
 
     if (sort === "price-low") {
@@ -240,7 +314,12 @@ export default function ExplorePage() {
         {filtered.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((p) => (
-              <PropertyCard key={p.id} property={p} />
+              <PropertyCard
+                key={p.id}
+                property={p}
+                isSaved={savedIds.includes(Number(p.id))}
+                onToggleSave={handleToggleSave}
+              />
             ))}
           </div>
         ) : (

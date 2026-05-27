@@ -34,6 +34,16 @@ public class UserController {
         return userRepository.findByRole(role.toUpperCase());
     }
 
+    // PUT /api/users/{id}/avatar
+    @PutMapping("/{id}/avatar")
+    public User updateAvatar(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        String avatarData = payload.get("avatar");
+        return userRepository.findById(id).map(user -> {
+            user.setAvatar(avatarData);
+            return userRepository.save(user);
+        }).orElse(null);
+    }
+
     // NOTE: POST (create user) is handled by /api/auth/register — NOT here.
     // Keeping POST here would bypass BCrypt hashing and JWT flow.
 }
