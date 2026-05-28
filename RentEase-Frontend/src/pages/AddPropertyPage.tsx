@@ -12,7 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, Upload, Eye, Send } from "lucide-react";
+import {
+  CheckCircle2,
+  Upload,
+  Eye,
+  Send,
+} from "lucide-react";
+
 import { createProperty } from "../lib/PropertyApi";
 import { toast } from "sonner";
 
@@ -32,12 +38,22 @@ const amenitiesList = [
 ];
 
 export default function AddPropertyPage() {
+
   const [submitted, setSubmitted] = useState(false);
+
   const [loading, setLoading] = useState(false);
-  const [amenities, setAmenities] = useState<string[]>([]);
+
+  const [amenities, setAmenities] =
+    useState<string[]>([]);
+
+  const [imagePreview, setImagePreview] =
+    useState("");
 
   useEffect(() => {
-    document.title = "List Property | RentEase";
+
+    document.title =
+      "List Property | RentEase";
+
   }, []);
 
   const [formData, setFormData] = useState({
@@ -58,44 +74,96 @@ export default function AddPropertyPage() {
   });
 
   const toggleAmenity = (a: string) => {
+
     setAmenities((prev) =>
-      prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
+      prev.includes(a)
+        ? prev.filter((x) => x !== a)
+        : [...prev, a]
     );
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
+
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const imageUrl =
+      URL.createObjectURL(file);
+
+    setImagePreview(imageUrl);
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement
+    >
+  ) => {
+
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.FormEvent
+  ) => {
+
     e.preventDefault();
 
     try {
+
       setLoading(true);
 
       const payload = {
+
         title: formData.title,
-        description: formData.description,
-        address: `${formData.address}${formData.locality ? `, ${formData.locality}` : ""}`,
+
+        description:
+          formData.description,
+
+        address:
+          `${formData.address}${
+            formData.locality
+              ? `, ${formData.locality}`
+              : ""
+          }`,
+
         city: formData.city,
+
         rent: Number(formData.rent),
-        propertyType: formData.propertyType,
+
+        propertyType:
+          formData.propertyType,
+
         bhk: Number(formData.bhk),
-        areaSqFt: Number(formData.areaSqFt),
-        furnished: formData.furnished === "yes",
+
+        areaSqFt:
+          Number(formData.areaSqFt),
+
+        furnished:
+          formData.furnished === "yes",
+
+        image: imagePreview,
       };
 
-      console.log("Sending property payload:", JSON.stringify(payload, null, 2));
+      console.log(
+        "Sending property payload:",
+        JSON.stringify(payload, null, 2)
+      );
 
       await createProperty(payload);
+
       setSubmitted(true);
-      toast.success("Property listed successfully!");
+
+      toast.success(
+        "Property listed successfully!"
+      );
 
       setFormData({
         title: "",
@@ -113,57 +181,110 @@ export default function AddPropertyPage() {
         ownerName: "",
         phone: "",
       });
+
       setAmenities([]);
+
+      setImagePreview("");
+
     } catch (error) {
-      console.error("Error saving property:", error);
-      toast.error("Failed to save property. Please check backend connection.");
+
+      console.error(
+        "Error saving property:",
+        error
+      );
+
+      toast.error(
+        "Failed to save property. Please check backend connection."
+      );
+
     } finally {
+
       setLoading(false);
     }
   };
 
   if (submitted) {
+
     return (
+
       <DashboardLayout>
+
         <div className="flex flex-col items-center py-20 text-center">
+
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
+
             <CheckCircle2 className="h-10 w-10 text-success" />
+
           </div>
+
           <h1 className="text-3xl font-bold text-foreground">
+
             Property Submitted!
+
           </h1>
+
           <p className="mt-3 max-w-md text-muted-foreground">
+
             Your property has been saved successfully and is pending admin verification.
+
           </p>
+
           <Button
             className="mt-6 bg-gradient-hero"
             onClick={() => setSubmitted(false)}
           >
+
             Add Another Property
+
           </Button>
+
         </div>
+
       </DashboardLayout>
     );
   }
 
   return (
+
     <DashboardLayout>
+
       <div className="max-w-3xl mx-auto">
+
         <h1 className="mb-2 text-2xl font-bold text-foreground">
+
           List Your Property
+
         </h1>
+
         <p className="mb-8 text-muted-foreground">
+
           Fill in the details below to list your property on RentEase — it's free!
+
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-8"
+        >
+
+          {/* BASIC DETAILS */}
+
           <section className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card">
+
             <h2 className="text-lg font-semibold text-foreground">
+
               Basic Details
+
             </h2>
 
             <div>
-              <Label htmlFor="title">Property Title</Label>
+
+              <Label htmlFor="title">
+
+                Property Title
+
+              </Label>
+
               <Input
                 id="title"
                 name="title"
@@ -172,59 +293,136 @@ export default function AddPropertyPage() {
                 onChange={handleChange}
                 required
               />
+
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+
               <div>
-                <Label>Property Type</Label>
+
+                <Label>
+
+                  Property Type
+
+                </Label>
+
                 <Select
                   value={formData.propertyType}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, propertyType: value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      propertyType: value,
+                    }))
                   }
                   required
                 >
+
                   <SelectTrigger>
+
                     <SelectValue placeholder="Select type" />
+
                   </SelectTrigger>
+
                   <SelectContent>
-                    <SelectItem value="FLAT">Apartment / Flat</SelectItem>
-                    <SelectItem value="HOUSE">House</SelectItem>
-                    <SelectItem value="PG">PG</SelectItem>
-                    <SelectItem value="VILLA">Villa</SelectItem>
+
+                    <SelectItem value="FLAT">
+
+                      Apartment / Flat
+
+                    </SelectItem>
+
+                    <SelectItem value="HOUSE">
+
+                      House
+
+                    </SelectItem>
+
+                    <SelectItem value="PG">
+
+                      PG
+
+                    </SelectItem>
+
+                    <SelectItem value="VILLA">
+
+                      Villa
+
+                    </SelectItem>
+
                   </SelectContent>
+
                 </Select>
+
               </div>
 
               <div>
-                <Label>BHK</Label>
+
+                <Label>
+
+                  BHK
+
+                </Label>
+
                 <Select
                   value={formData.bhk}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, bhk: value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      bhk: value,
+                    }))
                   }
                   required
                 >
+
                   <SelectTrigger>
+
                     <SelectValue placeholder="Select BHK" />
+
                   </SelectTrigger>
+
                   <SelectContent>
+
                     {[1, 2, 3, 4, 5].map((b) => (
-                      <SelectItem key={b} value={String(b)}>
+
+                      <SelectItem
+                        key={b}
+                        value={String(b)}
+                      >
+
                         {b} BHK
+
                       </SelectItem>
+
                     ))}
+
                   </SelectContent>
+
                 </Select>
+
               </div>
+
             </div>
+
           </section>
 
+          {/* LOCATION */}
+
           <section className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card">
-            <h2 className="text-lg font-semibold text-foreground">Location</h2>
+
+            <h2 className="text-lg font-semibold text-foreground">
+
+              Location
+
+            </h2>
 
             <div>
-              <Label htmlFor="address">Full Address</Label>
+
+              <Label htmlFor="address">
+
+                Full Address
+
+              </Label>
+
               <Input
                 id="address"
                 name="address"
@@ -233,11 +431,19 @@ export default function AddPropertyPage() {
                 onChange={handleChange}
                 required
               />
+
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+
               <div>
-                <Label htmlFor="city">City</Label>
+
+                <Label htmlFor="city">
+
+                  City
+
+                </Label>
+
                 <Input
                   id="city"
                   name="city"
@@ -246,10 +452,17 @@ export default function AddPropertyPage() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
 
               <div>
-                <Label htmlFor="locality">Area / Locality</Label>
+
+                <Label htmlFor="locality">
+
+                  Area / Locality
+
+                </Label>
+
                 <Input
                   id="locality"
                   name="locality"
@@ -257,18 +470,33 @@ export default function AddPropertyPage() {
                   value={formData.locality}
                   onChange={handleChange}
                 />
+
               </div>
+
             </div>
+
           </section>
 
+          {/* PRICING */}
+
           <section className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card">
+
             <h2 className="text-lg font-semibold text-foreground">
+
               Pricing & Details
+
             </h2>
 
             <div className="grid gap-4 sm:grid-cols-3">
+
               <div>
-                <Label htmlFor="rent">Monthly Rent (₹)</Label>
+
+                <Label htmlFor="rent">
+
+                  Monthly Rent (₹)
+
+                </Label>
+
                 <Input
                   id="rent"
                   name="rent"
@@ -278,10 +506,17 @@ export default function AddPropertyPage() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
 
               <div>
-                <Label htmlFor="deposit">Deposit (₹)</Label>
+
+                <Label htmlFor="deposit">
+
+                  Deposit (₹)
+
+                </Label>
+
                 <Input
                   id="deposit"
                   name="deposit"
@@ -290,10 +525,17 @@ export default function AddPropertyPage() {
                   value={formData.deposit}
                   onChange={handleChange}
                 />
+
               </div>
 
               <div>
-                <Label htmlFor="areaSqFt">Area (sqft)</Label>
+
+                <Label htmlFor="areaSqFt">
+
+                  Area (sqft)
+
+                </Label>
+
                 <Input
                   id="areaSqFt"
                   name="areaSqFt"
@@ -303,31 +545,66 @@ export default function AddPropertyPage() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
+
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
+
               <div>
-                <Label>Furnished</Label>
+
+                <Label>
+
+                  Furnished
+
+                </Label>
+
                 <Select
                   value={formData.furnished}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, furnished: value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      furnished: value,
+                    }))
                   }
                   required
                 >
+
                   <SelectTrigger>
+
                     <SelectValue placeholder="Select" />
+
                   </SelectTrigger>
+
                   <SelectContent>
-                    <SelectItem value="yes">Yes</SelectItem>
-                    <SelectItem value="no">No</SelectItem>
+
+                    <SelectItem value="yes">
+
+                      Yes
+
+                    </SelectItem>
+
+                    <SelectItem value="no">
+
+                      No
+
+                    </SelectItem>
+
                   </SelectContent>
+
                 </Select>
+
               </div>
 
               <div>
-                <Label htmlFor="availableFrom">Available From</Label>
+
+                <Label htmlFor="availableFrom">
+
+                  Available From
+
+                </Label>
+
                 <Input
                   id="availableFrom"
                   name="availableFrom"
@@ -335,35 +612,71 @@ export default function AddPropertyPage() {
                   value={formData.availableFrom}
                   onChange={handleChange}
                 />
+
               </div>
+
             </div>
+
           </section>
 
+          {/* AMENITIES */}
+
           <section className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card">
-            <h2 className="text-lg font-semibold text-foreground">Amenities</h2>
+
+            <h2 className="text-lg font-semibold text-foreground">
+
+              Amenities
+
+            </h2>
+
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+
               {amenitiesList.map((a) => (
+
                 <label
                   key={a}
                   className="flex cursor-pointer items-center gap-2"
                 >
+
                   <Checkbox
                     checked={amenities.includes(a)}
-                    onCheckedChange={() => toggleAmenity(a)}
+                    onCheckedChange={() =>
+                      toggleAmenity(a)
+                    }
                   />
-                  <span className="text-sm text-foreground">{a}</span>
+
+                  <span className="text-sm text-foreground">
+
+                    {a}
+
+                  </span>
+
                 </label>
+
               ))}
+
             </div>
+
           </section>
 
+          {/* DESCRIPTION + IMAGE */}
+
           <section className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card">
+
             <h2 className="text-lg font-semibold text-foreground">
+
               Description & Images
+
             </h2>
 
             <div>
-              <Label htmlFor="description">Property Description</Label>
+
+              <Label htmlFor="description">
+
+                Property Description
+
+              </Label>
+
               <Textarea
                 id="description"
                 name="description"
@@ -373,31 +686,95 @@ export default function AddPropertyPage() {
                 onChange={handleChange}
                 required
               />
+
+            </div>
+
+            {/* Property Image Upload */}
+
+            <div className="space-y-3">
+
+              <Label>
+
+                Property Image
+
+              </Label>
+
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+
+              {imagePreview && (
+
+                <div className="overflow-hidden rounded-2xl border">
+
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="h-64 w-full object-cover"
+                  />
+
+                </div>
+
+              )}
+
             </div>
 
             <div>
-              <Label>Upload Images</Label>
+
+              <Label>
+
+                Upload Images
+
+              </Label>
+
               <div className="mt-2 flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-border bg-secondary/30">
+
                 <div className="text-center">
+
                   <Upload className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+
                   <p className="text-sm text-muted-foreground">
+
                     Image upload backend will be integrated soon
+
                   </p>
+
                   <p className="text-xs text-muted-foreground">
+
                     Property will currently use a default placeholder image
+
                   </p>
+
                 </div>
+
               </div>
+
             </div>
+
           </section>
 
+          {/* CONTACT */}
+
           <section className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card">
+
             <h2 className="text-lg font-semibold text-foreground">
+
               Contact Details
+
             </h2>
+
             <div className="grid gap-4 sm:grid-cols-2">
+
               <div>
-                <Label htmlFor="ownerName">Your Name</Label>
+
+                <Label htmlFor="ownerName">
+
+                  Your Name
+
+                </Label>
+
                 <Input
                   id="ownerName"
                   name="ownerName"
@@ -405,10 +782,17 @@ export default function AddPropertyPage() {
                   value={formData.ownerName}
                   onChange={handleChange}
                 />
+
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone</Label>
+
+                <Label htmlFor="phone">
+
+                  Phone
+
+                </Label>
+
                 <Input
                   id="phone"
                   name="phone"
@@ -417,19 +801,26 @@ export default function AddPropertyPage() {
                   value={formData.phone}
                   onChange={handleChange}
                 />
+
               </div>
+
             </div>
+
           </section>
 
           <div className="flex gap-3">
+
             <Button
               type="button"
               variant="outline"
               size="lg"
               className="flex-1"
             >
+
               <Eye className="mr-2 h-4 w-4" />
+
               Preview Listing
+
             </Button>
 
             <Button
@@ -438,12 +829,21 @@ export default function AddPropertyPage() {
               className="flex-1 bg-gradient-hero hover:opacity-90"
               disabled={loading}
             >
+
               <Send className="mr-2 h-4 w-4" />
-              {loading ? "Submitting..." : "Submit Property"}
+
+              {loading
+                ? "Submitting..."
+                : "Submit Property"}
+
             </Button>
+
           </div>
+
         </form>
+
       </div>
+
     </DashboardLayout>
   );
 }

@@ -27,12 +27,12 @@ import { toast } from "sonner";
 export default function TenantDashboard() {
   const { user, isAuthenticated } = useAuth();
   const userName = user?.name || "Guest";
-
+  const [visitRequests, setVisitRequests] = useState<any[]>([]);
+  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+  const [conversationsCount, setConversationsCount] = useState(0);
+  const [inquiriesCount, setInquiriesCount] = useState(0);
   const [properties, setProperties] = useState<any[]>([]);
   const [savedItems, setSavedItems] = useState<any[]>([]);
-  const [inquiriesCount, setInquiriesCount] = useState(0);
-  const [conversationsCount, setConversationsCount] = useState(0);
-  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Recommendation Dialog State
@@ -115,9 +115,11 @@ export default function TenantDashboard() {
         setSavedItems(normalizedSaved);
 
         // 3. Fetch inquiries count
-        const inquiries = await getTenantInquiries();
-        setInquiriesCount(inquiries?.length || 0);
+const inquiries = await getTenantInquiries();
 
+setInquiriesCount(inquiries?.length || 0);
+
+setVisitRequests(inquiries || []);
         // 4. Fetch messages conversations count
         const convs = await getConversations();
         setConversationsCount(convs?.length || 0);
@@ -249,7 +251,84 @@ export default function TenantDashboard() {
             </div>
           )}
         </div>
+{/* Visit Requests Panel */}
+<div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+  <div className="mb-4 flex items-center justify-between">
+    <div>
+      <h2 className="text-lg font-semibold">
+        My Visit Requests
+      </h2>
 
+      <p className="text-sm text-muted-foreground">
+        Track your scheduled property visits
+      </p>
+    </div>
+
+    <Badge variant="secondary">
+      {visitRequests.length} Visits
+    </Badge>
+  </div>
+
+  {visitRequests.length === 0 ? (
+    <div className="rounded-xl border border-dashed border-border p-6 text-center">
+      <p className="text-sm text-muted-foreground">
+        No visit requests yet.
+      </p>
+    </div>
+  ) : (
+    <div className="space-y-4">
+      {visitRequests.map((visit: any) => (
+        <div
+          key={visit.id}
+          className="rounded-xl border border-border p-4"
+        >
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
+            <div>
+              <h3 className="font-semibold">
+                {visit.property?.title || "Property Visit"}
+              </h3>
+
+              <p className="text-sm text-muted-foreground mt-1">
+                {visit.message}
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Badge variant="outline">
+                  📅 {visit.visitDate || "Date not selected"}
+                </Badge>
+
+                {visit.visitTime && (
+                  <Badge variant="outline">
+                    ⏰ {visit.visitTime}
+                  </Badge>
+                )}
+
+                <Badge variant="secondary">
+                  📞 {visit.phone}
+                </Badge>
+              </div>
+            </div>
+
+            <Badge
+              className={
+                visit.status === "APPROVED"
+                  ? "bg-green-500 text-white"
+                  : visit.status === "REJECTED"
+                  ? "bg-red-500 text-white"
+                  : visit.status === "DONE"
+                  ? "bg-blue-500 text-white"
+                  : "bg-yellow-500 text-black"
+              }
+            >
+              {visit.status || "SCHEDULED"}
+            </Badge>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
         {/* Recent activity */}
         <div>
           <h2 className="text-lg font-semibold text-foreground mb-3">Recent Activity</h2>

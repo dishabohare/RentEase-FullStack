@@ -4,11 +4,13 @@ export interface InquiryData {
   propertyId: number | string;
   message: string;
   visitDate: string;
+  visitTime?: string;
   phone: string;
+  status?: string;
 }
 
 export const submitInquiry = async (data: InquiryData) => {
-  const response = await api.post("/api/inquiries", data);
+  const response = await api.post("/inquiries", data);
   return response.data;
 };
 
